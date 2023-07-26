@@ -82,7 +82,7 @@ namespace LomboReaderAPI.Controllers.Genre
           
         }
         [HttpGet]
-        [Route("addSubGenre")]
+        [Route("addSubGenre")] 
         public async Task<ActionResult> AddSubGenre([FromQuery] string genre_id, string subGenreName) {
             if (string.IsNullOrEmpty(genre_id) || string.IsNullOrEmpty(subGenreName))
                 return BadRequest("Недостаточно данных: проверти запрос.");
