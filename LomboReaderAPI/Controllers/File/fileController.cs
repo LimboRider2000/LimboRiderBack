@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 using System.Net.Http.Headers;
 
-namespace LomboReaderAPI.Controllers.File
+namespace LimboReaderAPI.Controllers.File
 {
     [Route("api/avatarFile")]
     [ApiController]
@@ -22,7 +22,9 @@ namespace LomboReaderAPI.Controllers.File
 
                 if (file.Length > 0)
                 {
-                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
+                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition)
+                                    ?.FileName?.Trim('"');
+                    if (fileName == null) return BadRequest(); ;
                     var fullPath = Path.Combine(pathToserv, fileName);
                     var dbPath = Path.Combine(folderName, fileName);
 

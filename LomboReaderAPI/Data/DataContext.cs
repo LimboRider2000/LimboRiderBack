@@ -1,7 +1,7 @@
-﻿using LomboReaderAPI.Data.Entety;
+﻿using LimboReaderAPI.Data.Entety;
 using Microsoft.EntityFrameworkCore;
 
-namespace LomboReaderAPI.Data
+namespace LimboReaderAPI.Data
 {
     public class DataContext : DbContext
     {

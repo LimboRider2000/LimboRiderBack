@@ -1,4 +1,4 @@
-﻿namespace LomboReaderAPI.Data.Entety
+﻿namespace LimboReaderAPI.Data.Entety
 {
     public class Role
     {

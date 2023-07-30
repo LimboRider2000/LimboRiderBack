@@ -1,11 +1,11 @@
 ﻿using DevOpseTest.Services.KDF;
 
-using LomboReaderAPI.Data;
+using LimboReaderAPI.Data;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LomboReaderAPI.Controllers.UserController
+namespace LimboReaderAPI.Controllers.UserController
 {
     [Route("Api/Authentication")]
     [ApiController]

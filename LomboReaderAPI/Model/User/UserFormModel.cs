@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace LomboReaderAPI.Model.User
+namespace LimboReaderAPI.Model.User
 {
     public class UserFormModel
     {

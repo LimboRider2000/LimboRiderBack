@@ -1,4 +1,4 @@
-﻿namespace LomboReaderAPI.Model.Genre
+﻿namespace LimboReaderAPI.Model.Genre
 {
     public class GenreAndSubgenreCoverForView
     {

@@ -1,7 +1,6 @@
-﻿
-using LomboReaderAPI.Data;
-using LomboReaderAPI.Data.Entety;
-using LomboReaderAPI.Model.Genre;
+﻿using LimboReaderAPI.Data;
+using LimboReaderAPI.Data.Entety;
+using LimboReaderAPI.Model.Genre;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +11,7 @@ using System.Threading.Tasks.Dataflow;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace LomboReaderAPI.Controllers.Genre
+namespace LimboReaderAPI.Controllers.Genre
 {
     [Route("api/Genre")]
     [ApiController]
@@ -31,6 +30,8 @@ namespace LomboReaderAPI.Controllers.Genre
         public async Task<ActionResult> Get([FromQuery] string genreName)
         {
            if (String.IsNullOrEmpty(genreName)) return BadRequest("Не коректное имя") ;
+            if (_dataContext.Genres.Any(item => item.GenreName == genreName))
+                return BadRequest("Такой жанр уже есть");
 
            var newGenre = new Data.Entety.Genre()
            { Id = Guid.NewGuid(), GenreName = genreName };
@@ -86,6 +87,11 @@ namespace LomboReaderAPI.Controllers.Genre
         public async Task<ActionResult> AddSubGenre([FromQuery] string genre_id, string subGenreName) {
             if (string.IsNullOrEmpty(genre_id) || string.IsNullOrEmpty(subGenreName))
                 return BadRequest("Недостаточно данных: проверти запрос.");
+            if (await _dataContext.SubGenres.
+                AnyAsync(item =>
+                item.SubGenreName == subGenreName
+                && item.Genre_id == Guid.Parse(genre_id)))
+                return BadRequest("Такой поджанр уже существует");
             try
             {
                 var newSubGenre = new SubGenre()
@@ -99,7 +105,7 @@ namespace LomboReaderAPI.Controllers.Genre
                 await _dataContext.SaveChangesAsync();
                 return Ok(newSubGenre);
             }catch (Exception ex) {
-                return BadRequest(ex.Message);
+                return BadRequest("Ошибка сервера: " + ex.Message);
             }
         }
 
@@ -111,15 +117,107 @@ namespace LomboReaderAPI.Controllers.Genre
         }
 
         // PUT api/<ValuesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut]
+        public async  Task<ActionResult> Put([FromBody] Data.Entety.Genre value)
         {
+            try
+            {
+                if (value != null)
+                {
+                    Data.Entety.Genre? genre =  await _dataContext.Genres.Where(item=> item.Id == value.Id).FirstOrDefaultAsync();
+                    if (genre != null)
+                    {
+                        genre.GenreName = value.GenreName;
+                        await _dataContext.SaveChangesAsync();
+                    return Ok("true");
+                    }
+                    return BadRequest("Жанра с таким Id не существует");
+                }
+                else
+                    return BadRequest("Данные повреждены");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+           
+        }
+        [HttpPut]
+        [Route("putSubGenre")]
+        public async Task<ActionResult> Put([FromBody] Data.Entety.SubGenre value)
+        {
+            try
+            {
+                if (value != null)
+                {
+                    Data.Entety.SubGenre? subGenre = await _dataContext.SubGenres.Where(item => item.Id == value.Id).FirstOrDefaultAsync();
+                    if (subGenre != null)
+                    {
+                        subGenre.SubGenreName = value.SubGenreName;
+                        await _dataContext.SaveChangesAsync();
+                        return Ok("true");
+                    }
+                    return BadRequest("Поджанра с таким Id не существует");
+                }
+                else
+                    return BadRequest("Данные повреждены");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
         }
 
         // DELETE api/<ValuesController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpDelete]
+        public async Task<ActionResult> Delete([FromQuery]string id)
         {
+            try
+            {
+                if (id != null)
+                { 
+                    var pasrseId = Guid.Parse(id);
+
+                    var subGenreList =
+                        await _dataContext.SubGenres
+                              .Where(item => item.Genre_id == pasrseId).ToListAsync();
+                    subGenreList.ForEach(item => _dataContext.SubGenres.Remove(item));
+
+                    _dataContext.Genres.Remove(
+                        await _dataContext.Genres.
+                                 Where(item => item.Id == pasrseId)
+                                     .FirstAsync()
+                        );
+                    await _dataContext.SaveChangesAsync();
+                    return Ok("true");
+                }
+                else return BadRequest("При удалении произошла ошибка");
+            }catch(Exception ex) {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpDelete]
+        [Route("DeleteSubGenre")]
+        public async Task<ActionResult> DeleteSubGenre([FromQuery] string id)
+        {
+            if (id != null) {
+                try
+                {
+                    _dataContext.SubGenres.Remove(
+                           await _dataContext.SubGenres.
+                                    Where(item => item.Id == Guid.Parse(id))
+                                        .FirstAsync()
+                           );
+                    await _dataContext.SaveChangesAsync();
+                    return Ok("true");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);  
+                }
+            }
+            else return BadRequest();
         }
     }
 }

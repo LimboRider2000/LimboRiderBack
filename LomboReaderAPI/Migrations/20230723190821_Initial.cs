@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace LomboReaderAPI.Migrations
+namespace LimboReaderAPI.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration

@@ -1,7 +1,7 @@
 using DevOpseTest.Services.Hash;
 using DevOpseTest.Services.KDF;
 
-using LomboReaderAPI.Data;
+using LimboReaderAPI.Data;
 
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
