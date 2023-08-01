@@ -2,6 +2,9 @@
 
 using LimboReaderAPI.Data;
 
+using LomboReaderAPI.Model.User;
+using LomboReaderAPI.Services.Mail;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,31 +16,40 @@ namespace LimboReaderAPI.Controllers.UserController
     {
         public DataContext _dataContext;
         public IKDFService _kdfService;
-        public UserAuthenticationController(DataContext dbContext, IKDFService kdfService)
+        public IMailService _mailService;
+        public UserAuthenticationController(DataContext dbContext, IKDFService kdfService, IMailService mailService)
         {
             _dataContext = dbContext;
             _kdfService = kdfService;
+            _mailService = mailService;
         }
 
         // POST api/Auntification
         [HttpPost]
-        public async Task<ActionResult> SingIn([FromForm] Data.Entety.User user)
+        public async Task<ActionResult> SingIn([FromBody] UserAuthModel user)
         {
 
-            var login = user.Login;
-            var password = user.PasswordHash;
             try
             {
-                if (!String.IsNullOrEmpty(login) && !String.IsNullOrEmpty(password))
+                if (user != null)
                 {
 
-                    var currUser = await _dataContext.Users.FirstOrDefaultAsync(u => u.Login == login);
+                    var currUser = await _dataContext.Users.FirstOrDefaultAsync(u => u.Login == user.Login);
+
                     if (currUser == null) return Ok(new { success = false });
 
                     String derivedKey = _kdfService.GetDirivedKey(
-                        password, currUser.Id.ToString());
+                       user.Password, currUser.Id.ToString());
                     if (derivedKey == currUser.PasswordHash)
                     {
+
+                        if (currUser.ActivateCode != null) {
+                            _mailService.SendMail(currUser.Email, currUser.ActivateCode);
+                            return Ok(new { notVerifi = true, id = currUser.Id });
+                        };
+
+                        if (!currUser.Active) return Ok(new { notActive = true } );
+
                         return Ok(new { success = true, currUser });
                     }
                     

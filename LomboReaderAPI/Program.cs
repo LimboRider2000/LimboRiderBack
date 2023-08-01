@@ -3,6 +3,8 @@ using DevOpseTest.Services.KDF;
 
 using LimboReaderAPI.Data;
 
+using LomboReaderAPI.Services.Mail;
+
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -33,6 +35,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 builder.Services.AddSingleton<IHashService, Sha1HeshService>();
 builder.Services.AddSingleton<IKDFService, HashBasedKdfService>();
+builder.Services.AddSingleton<IMailService, MailService>();
 
 
 
@@ -63,11 +66,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-//app.UseRouting();
-//app.UseEndpoints(endpoints =>
-//    endpoints.MapControllers("")
-//    }
  
 app.UseHttpsRedirection();
 app.UseStaticFiles();

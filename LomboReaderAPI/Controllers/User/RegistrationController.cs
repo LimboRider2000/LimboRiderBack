@@ -4,6 +4,8 @@ using DevOpseTest.Services.KDF;
 using LimboReaderAPI.Data;
 using LimboReaderAPI.Model.User;
 
+using LomboReaderAPI.Services.Mail;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,17 +21,53 @@ namespace LimboReaderAPI.Controllers.UserController
     {
         private DataContext _dataContext;
         private IKDFService _kDFService;
+        private IMailService _mailService;
+        private Data.Entety.User? newUser;
 
-        public RegistrationController(DataContext dataContext, IKDFService kDFService)
+        public RegistrationController(DataContext dataContext, IKDFService kDFService,
+            IMailService mailService)
         {
             _dataContext = dataContext;
             _kDFService = kDFService;
+            _mailService = mailService;
         }
 
+        [HttpGet]
+        public async Task<ActionResult> Get([FromQuery] string code,string userId) {
+            if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(userId))
+            {
+                try
+                {
+                    var user = await _dataContext.Users
+                         .Where(item => item.Id == Guid.Parse(userId))
+                         .FirstOrDefaultAsync();
+                    
+                    if (user == null) return Ok(new
+                    {
+                        success = false,
+                        message = "Пользователь с таким Id не найден"
+                    });
 
+                    _ = int.TryParse(user.ActivateCode, out int num1);
+                    _ = int.TryParse(code, out int num2);
+                    if (num1  != num2)
+                        return Ok(new { success = false,message = "Не правильный код Активации" });
+
+                    user.ActivateCode = null;
+                    user.Active = true;
+
+                    await _dataContext.SaveChangesAsync();
+                    return Ok(new {success = true});
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }return BadRequest();
+        }
         // POST api/<RegistrationController>
         [HttpPost]
-        public async IActionResult Post([FromBody] UserFormModel user)
+        public async Task<ActionResult> Post([FromBody] UserFormModel user)
         {
             try
             {
@@ -40,7 +78,7 @@ namespace LimboReaderAPI.Controllers.UserController
 
                     string dirivedKey = _kDFService.GetDirivedKey(user.password, idStr);
 
-                    var newUser = new Data.Entety.User()
+                    newUser = new Data.Entety.User()
                     {
                         Id = id,
                         Name = user.name,
@@ -52,9 +90,12 @@ namespace LimboReaderAPI.Controllers.UserController
                         RegisterDt = DateTime.Now,
                         ActivateCode = RandomCodeGen(),
                     };
-                    await _dataContext.Users.AddAsync(newUser)
+                    await _dataContext.Users.AddAsync(newUser);
+                    await _dataContext.SaveChangesAsync();
 
-                    return Ok(new { success = true });
+                    _mailService.SendMail(newUser.Email, newUser.ActivateCode);
+                    
+                    return Ok(new { success = true, id = idStr });
                 }
                 else
                 {
@@ -67,6 +108,7 @@ namespace LimboReaderAPI.Controllers.UserController
             }
          
         }
+        
         string RandomCodeGen()
         {
             var random = new Random();
