@@ -1,15 +1,13 @@
-﻿using DevOpseTest.Services.Hash;
-using DevOpseTest.Services.KDF;
+﻿using DevOpseTest.Services.KDF;
 
 using LimboReaderAPI.Data;
 using LimboReaderAPI.Model.User;
 
+using LomboReaderAPI.Services.CodeGenerator;
 using LomboReaderAPI.Services.Mail;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using System.Xml.Serialization;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -23,17 +21,20 @@ namespace LimboReaderAPI.Controllers.UserController
         private IKDFService _kDFService;
         private IMailService _mailService;
         private Data.Entety.User? newUser;
+        private ICodeGenerator _codeGenerator;
 
         public RegistrationController(DataContext dataContext, IKDFService kDFService,
-            IMailService mailService)
+            IMailService mailService, ICodeGenerator codeGenerator)
         {
             _dataContext = dataContext;
             _kDFService = kDFService;
             _mailService = mailService;
+            _codeGenerator = codeGenerator;
         }
 
         [HttpGet]
-        public async Task<ActionResult> Get([FromQuery] string code,string userId) {
+        public async Task<ActionResult> Get([FromQuery] string code, string userId)
+        {
             if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(userId))
             {
                 try
@@ -41,7 +42,7 @@ namespace LimboReaderAPI.Controllers.UserController
                     var user = await _dataContext.Users
                          .Where(item => item.Id == Guid.Parse(userId))
                          .FirstOrDefaultAsync();
-                    
+
                     if (user == null) return Ok(new
                     {
                         success = false,
@@ -50,20 +51,21 @@ namespace LimboReaderAPI.Controllers.UserController
 
                     _ = int.TryParse(user.ActivateCode, out int num1);
                     _ = int.TryParse(code, out int num2);
-                    if (num1  != num2)
-                        return Ok(new { success = false,message = "Не правильный код Активации" });
+                    if (num1 != num2)
+                        return Ok(new { success = false, message = "Не правильный код Активации" });
 
                     user.ActivateCode = null;
                     user.Active = true;
 
                     await _dataContext.SaveChangesAsync();
-                    return Ok(new {success = true});
+                    return Ok(new { success = true });
                 }
                 catch (Exception ex)
                 {
                     return BadRequest(ex.Message);
                 }
-            }return BadRequest();
+            }
+            return BadRequest();
         }
         // POST api/<RegistrationController>
         [HttpPost]
@@ -88,13 +90,13 @@ namespace LimboReaderAPI.Controllers.UserController
                         UserRole = "User",
                         Avatar = user.avatar,
                         RegisterDt = DateTime.Now,
-                        ActivateCode = RandomCodeGen(),
+                        ActivateCode = _codeGenerator.RandomCodeGen(),
                     };
                     await _dataContext.Users.AddAsync(newUser);
                     await _dataContext.SaveChangesAsync();
 
                     _mailService.SendMail(newUser.Email, newUser.ActivateCode);
-                    
+
                     return Ok(new { success = true, id = idStr });
                 }
                 else
@@ -106,17 +108,10 @@ namespace LimboReaderAPI.Controllers.UserController
             {
                 return BadRequest(ex.Message);
             }
-         
+
         }
-        
-        string RandomCodeGen()
-        {
-            var random = new Random();
-            string s = string.Empty;
-            for (int i = 0; i < 7; i++)
-                s = String.Concat(s, random.Next(10).ToString());
-            return s;
-        }
+
+
 
 
 

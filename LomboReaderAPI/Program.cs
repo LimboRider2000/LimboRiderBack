@@ -3,6 +3,8 @@ using DevOpseTest.Services.KDF;
 
 using LimboReaderAPI.Data;
 
+using LomboReaderAPI.Services.CodeGenerator;
+using LomboReaderAPI.Services.File;
 using LomboReaderAPI.Services.Mail;
 
 using Microsoft.AspNetCore.Http.Features;
@@ -31,13 +33,14 @@ builder.Services.AddDbContext<DataContext>(options =>
         ).SchemaBehavior(
             MySqlSchemaBehavior.Translate,
             (schema, table) => $"{schema}_{table}"
-        )));
+        )),        
+        ServiceLifetime.Transient);
 
 builder.Services.AddSingleton<IHashService, Sha1HeshService>();
 builder.Services.AddSingleton<IKDFService, HashBasedKdfService>();
 builder.Services.AddSingleton<IMailService, MailService>();
-
-
+builder.Services.AddTransient<ICodeGenerator,CodeGenerator>();
+builder.Services.AddSingleton<IFileWriter, FileWriter>();
 
 builder.Services.AddCors();
 builder.Services.AddSwaggerGen();
@@ -55,10 +58,11 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
-app.UseCors(builder => builder.WithOrigins("http://localhost:4200/")
+app.UseCors(builder => builder.WithOrigins("https://localhost:4200/")
                                           .AllowAnyMethod()
                                           .AllowAnyHeader()
-                                          .AllowAnyOrigin());
+                                          .AllowAnyOrigin()
+                                          .WithExposedHeaders("Content-Disposition"));
 
 
 if (app.Environment.IsDevelopment())

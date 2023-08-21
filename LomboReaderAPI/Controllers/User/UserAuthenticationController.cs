@@ -50,7 +50,7 @@ namespace LimboReaderAPI.Controllers.UserController
 
                         if (!currUser.Active) return Ok(new { notActive = true } );
 
-                        return Ok(new { success = true, currUser });
+                        return Ok(new { success = true, currUser,avatarPath = currUser.Avatar });
                     }
                     
                 }

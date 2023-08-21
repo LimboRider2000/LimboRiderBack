@@ -11,7 +11,6 @@ namespace LimboReaderAPI.Data
         public DbSet<Comments> Comments { get; set; }
         public DbSet<Authors> Authors { get; set; }
         public DbSet<SubGenre> SubGenres { get; set; }
-        public DbSet<Role> Roles { get; set; }
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
             #region
@@ -67,18 +66,7 @@ namespace LimboReaderAPI.Data
         {
           modelBuilder.HasDefaultSchema("LimboReaderDB");
 
-          modelBuilder.Entity<Role>().HasData(
-                new Role
-                {
-                    Id = Guid.Parse("7180e255-c840-4180-9384-12d3f063e444"),
-                    RoleName = "Admin"
-                },
-                new Role
-                {
-                    Id = Guid.Parse("7fa1237a-1756-4ab6-a789-2d3a5330ae78"),
-                    RoleName = "UserController"
-                }
-                );
+          
 
             modelBuilder.Entity<User>().HasData(
                     new User()

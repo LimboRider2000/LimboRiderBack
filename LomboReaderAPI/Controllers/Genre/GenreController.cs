@@ -5,10 +5,6 @@ using LimboReaderAPI.Model.Genre;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using NuGet.Protocol.Core.Types;
-
-using System.Threading.Tasks.Dataflow;
-
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace LimboReaderAPI.Controllers.Genre
@@ -25,16 +21,16 @@ namespace LimboReaderAPI.Controllers.Genre
         }
 
 
-        // GET: api/<ValuesController>
+        // GET: api/<BookController>
         [HttpGet]
         public async Task<ActionResult> Get([FromQuery] string genreName)
         {
-           if (String.IsNullOrEmpty(genreName)) return BadRequest("Не коректное имя") ;
-            if (_dataContext.Genres.Any(item => item.GenreName == genreName))
+            if (String.IsNullOrEmpty(genreName)) return BadRequest("Не коректное имя");
+            if (await _dataContext.Genres.AnyAsync(item => item.GenreName == genreName))
                 return BadRequest("Такой жанр уже есть");
 
-           var newGenre = new Data.Entety.Genre()
-           { Id = Guid.NewGuid(), GenreName = genreName };
+            var newGenre = new Data.Entety.Genre()
+            { Id = Guid.NewGuid(), GenreName = genreName };
             try
             {
                 await _dataContext.AddAsync(newGenre);
@@ -45,24 +41,28 @@ namespace LimboReaderAPI.Controllers.Genre
             {
                 return BadRequest(ex.Message);
             }
+            finally
+            {
+                _dataContext.Dispose();
+            }
         }
 
         [HttpGet]
         [Route("GetAll")]
-        public  async Task<ActionResult> GetAll()
+        public async Task<ActionResult> GetAll()
         {
             try
             {
                 List<Data.Entety.Genre> genreList = await _dataContext.Genres.ToListAsync();
                 List<Data.Entety.SubGenre> subGenresList = await _dataContext.SubGenres.ToListAsync();
 
-                if (genreList == null|| genreList.Count == 0) return Ok();
+                if (genreList == null || genreList.Count == 0) return Ok();
 
                 List<GenreAndSubgenreCoverForView> listGenre = new List<GenreAndSubgenreCoverForView>();
 
                 genreList.ForEach(item => listGenre.Add(new GenreAndSubgenreCoverForView() { Genre = item }));
 
-                if (subGenresList == null || subGenresList.Count == 0 ) return Ok(listGenre);
+                if (subGenresList == null || subGenresList.Count == 0) return Ok(listGenre);
 
                 foreach (var genre in listGenre)
                 {
@@ -74,17 +74,20 @@ namespace LimboReaderAPI.Controllers.Genre
                         }
                     }
                 }
+
                 return Ok(listGenre);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);   
+                return BadRequest(ex.Message);
             }
-          
+
+
         }
         [HttpGet]
-        [Route("addSubGenre")] 
-        public async Task<ActionResult> AddSubGenre([FromQuery] string genre_id, string subGenreName) {
+        [Route("addSubGenre")]
+        public async Task<ActionResult> AddSubGenre([FromQuery] string genre_id, string subGenreName)
+        {
             if (string.IsNullOrEmpty(genre_id) || string.IsNullOrEmpty(subGenreName))
                 return BadRequest("Недостаточно данных: проверти запрос.");
             if (await _dataContext.SubGenres.
@@ -104,32 +107,30 @@ namespace LimboReaderAPI.Controllers.Genre
                 await _dataContext.SubGenres.AddAsync(newSubGenre);
                 await _dataContext.SaveChangesAsync();
                 return Ok(newSubGenre);
-            }catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 return BadRequest("Ошибка сервера: " + ex.Message);
             }
         }
 
-        // GET api/<ValuesController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+        // GET api/<BookController>/5
 
-        // PUT api/<ValuesController>/5
+
+        // PUT api/<BookController>/5
         [HttpPut]
-        public async  Task<ActionResult> Put([FromBody] Data.Entety.Genre value)
+        public async Task<ActionResult> Put([FromBody] Data.Entety.Genre value)
         {
             try
             {
                 if (value != null)
                 {
-                    Data.Entety.Genre? genre =  await _dataContext.Genres.Where(item=> item.Id == value.Id).FirstOrDefaultAsync();
+                    Data.Entety.Genre? genre = await _dataContext.Genres.Where(item => item.Id == value.Id).FirstOrDefaultAsync();
                     if (genre != null)
                     {
                         genre.GenreName = value.GenreName;
                         await _dataContext.SaveChangesAsync();
-                    return Ok("true");
+                        return Ok(genre);
                     }
                     return BadRequest("Жанра с таким Id не существует");
                 }
@@ -140,7 +141,7 @@ namespace LimboReaderAPI.Controllers.Genre
             {
                 return BadRequest(ex.Message);
             }
-           
+
         }
         [HttpPut]
         [Route("putSubGenre")]
@@ -155,7 +156,7 @@ namespace LimboReaderAPI.Controllers.Genre
                     {
                         subGenre.SubGenreName = value.SubGenreName;
                         await _dataContext.SaveChangesAsync();
-                        return Ok("true");
+                        return Ok(subGenre);
                     }
                     return BadRequest("Поджанра с таким Id не существует");
                 }
@@ -169,14 +170,14 @@ namespace LimboReaderAPI.Controllers.Genre
 
         }
 
-        // DELETE api/<ValuesController>/5
+        // DELETE api/<BookController>/5
         [HttpDelete]
-        public async Task<ActionResult> Delete([FromQuery]string id)
+        public async Task<ActionResult> Delete([FromQuery] string id)
         {
             try
             {
                 if (id != null)
-                { 
+                {
                     var pasrseId = Guid.Parse(id);
 
                     var subGenreList =
@@ -193,7 +194,9 @@ namespace LimboReaderAPI.Controllers.Genre
                     return Ok("true");
                 }
                 else return BadRequest("При удалении произошла ошибка");
-            }catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 return BadRequest(ex.Message);
             }
         }
@@ -201,9 +204,11 @@ namespace LimboReaderAPI.Controllers.Genre
         [Route("DeleteSubGenre")]
         public async Task<ActionResult> DeleteSubGenre([FromQuery] string id)
         {
-            if (id != null) {
+            if (id != null)
+            {
                 try
                 {
+
                     _dataContext.SubGenres.Remove(
                            await _dataContext.SubGenres.
                                     Where(item => item.Id == Guid.Parse(id))
@@ -214,7 +219,7 @@ namespace LimboReaderAPI.Controllers.Genre
                 }
                 catch (Exception ex)
                 {
-                    return BadRequest(ex.Message);  
+                    return BadRequest(ex.Message);
                 }
             }
             else return BadRequest();

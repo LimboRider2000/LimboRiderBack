@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace LimboReaderAPI.Migrations
+namespace LomboReaderAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230723190821_Initial")]
-    partial class Initial
+    [Migration("20230816134140_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,7 +51,7 @@ namespace LimboReaderAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("Author_id")
+                    b.Property<Guid?>("Author_idId")
                         .HasColumnType("char(36)");
 
                     b.Property<DateTime>("CreatedDate")
@@ -65,20 +65,34 @@ namespace LimboReaderAPI.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
+                    b.Property<Guid>("Genre_idId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("double");
+
+                    b.Property<Guid>("SubGenre_idId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("TitleImgFile")
+                    b.Property<string>("TitleImgPath")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("User_id")
+                    b.Property<Guid>("User_idId")
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Author_idId");
+
+                    b.HasIndex("Genre_idId");
+
+                    b.HasIndex("SubGenre_idId");
+
+                    b.HasIndex("User_idId");
 
                     b.ToTable("BookArticles", "LimboReaderDB");
                 });
@@ -113,44 +127,13 @@ namespace LimboReaderAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("BookArticleId")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("GenreName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookArticleId");
-
                     b.ToTable("Genres", "LimboReaderDB");
-                });
-
-            modelBuilder.Entity("LimboReaderAPI.Data.Entety.Role", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("RoleName")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Roles", "LimboReaderDB");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("7180e255-c840-4180-9384-12d3f063e444"),
-                            RoleName = "Admin"
-                        },
-                        new
-                        {
-                            Id = new Guid("7fa1237a-1756-4ab6-a789-2d3a5330ae78"),
-                            RoleName = "UserController"
-                        });
                 });
 
             modelBuilder.Entity("LimboReaderAPI.Data.Entety.SubGenre", b =>
@@ -171,36 +154,23 @@ namespace LimboReaderAPI.Migrations
                     b.ToTable("SubGenres", "LimboReaderDB");
                 });
 
-            modelBuilder.Entity("LimboReaderAPI.Data.Entety.Tag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("BookArticleId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("TagName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BookArticleId");
-
-                    b.ToTable("Tag", "LimboReaderDB");
-                });
-
             modelBuilder.Entity("LimboReaderAPI.Data.Entety.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("ActivateCode")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Avatar")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("LastLoginDt")
@@ -231,34 +201,47 @@ namespace LimboReaderAPI.Migrations
                         new
                         {
                             Id = new Guid("6764db38-5306-4e85-a15d-7392e8422b8a"),
+                            Active = false,
                             Email = "admin@ukr.net",
                             Login = "Admin",
                             Name = "Root Administrator",
                             PasswordHash = "CDE2E51D593001C6392593A3332BCEE452B61273",
-                            RegisterDt = new DateTime(2023, 7, 23, 22, 8, 21, 784, DateTimeKind.Local).AddTicks(1502),
+                            RegisterDt = new DateTime(2023, 8, 16, 16, 41, 40, 686, DateTimeKind.Local).AddTicks(4345),
                             UserRole = "Admin"
                         });
                 });
 
-            modelBuilder.Entity("LimboReaderAPI.Data.Entety.Genre", b =>
-                {
-                    b.HasOne("LimboReaderAPI.Data.Entety.BookArticle", null)
-                        .WithMany("GenresList")
-                        .HasForeignKey("BookArticleId");
-                });
-
-            modelBuilder.Entity("LimboReaderAPI.Data.Entety.Tag", b =>
-                {
-                    b.HasOne("LimboReaderAPI.Data.Entety.BookArticle", null)
-                        .WithMany("TagList")
-                        .HasForeignKey("BookArticleId");
-                });
-
             modelBuilder.Entity("LimboReaderAPI.Data.Entety.BookArticle", b =>
                 {
-                    b.Navigation("GenresList");
+                    b.HasOne("LimboReaderAPI.Data.Entety.Authors", "Author_id")
+                        .WithMany()
+                        .HasForeignKey("Author_idId");
 
-                    b.Navigation("TagList");
+                    b.HasOne("LimboReaderAPI.Data.Entety.Genre", "Genre_id")
+                        .WithMany()
+                        .HasForeignKey("Genre_idId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LimboReaderAPI.Data.Entety.SubGenre", "SubGenre_id")
+                        .WithMany()
+                        .HasForeignKey("SubGenre_idId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LimboReaderAPI.Data.Entety.User", "User_id")
+                        .WithMany()
+                        .HasForeignKey("User_idId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author_id");
+
+                    b.Navigation("Genre_id");
+
+                    b.Navigation("SubGenre_id");
+
+                    b.Navigation("User_id");
                 });
 #pragma warning restore 612, 618
         }

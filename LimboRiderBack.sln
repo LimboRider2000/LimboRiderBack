@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33723.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LomboReaderAPI", "LomboReaderAPI\LomboReaderAPI.csproj", "{2AC297EF-2638-42F7-9A18-EF816A888609}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LimboReaderAPI", "LomboReaderAPI\LimboReaderAPI.csproj", "{2AC297EF-2638-42F7-9A18-EF816A888609}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
