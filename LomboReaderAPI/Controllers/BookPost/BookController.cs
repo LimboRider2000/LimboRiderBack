@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
 
+using System.Text;
+
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace LomboReaderAPI.Controllers.BookPost
@@ -113,14 +115,29 @@ namespace LomboReaderAPI.Controllers.BookPost
                 var coverExt = value["extensionTitleImg"];
                 var authorLastName = value["authorLastName"];
                 var authorName = value["authorName"];
+                //   List<System.IO.File> bookFileList = value["bookFileList"];
+
+                string bookFileName = $"{tittle}-{authorLastName} {authorName}".ToLower();
 
 
-                var bookPath = await _filWriter.BookFileWriter(value["bookFile"].ToString(), tittle.ToString(), bookExt.ToString());
+                if (value.Files.Count > 0)
+                {
+                    
+                    foreach (var file in value.Files)
+                        {
+                         await _filWriter.BookFileWriter(file, bookFileName);
+                        }
+                }
+                var bookPath = Path.Combine("Resources", "Book", bookFileName);
+                //var bookPath = await _filWriter.BookFileWriter(value["bookFileList"].ToString(), tittle.ToString(), bookExt.ToString());
                 var coverPath = await _filWriter.CoverFileWriter(value["titleImgFile"].ToString(), tittle.ToString(), coverExt.ToString());
 
-                if (string.IsNullOrEmpty(tittle) || string.IsNullOrEmpty(description) ||
-                       string.IsNullOrEmpty(genre) || string.IsNullOrEmpty(subGenre) ||
-                       string.IsNullOrEmpty(bookPath) || string.IsNullOrEmpty(coverPath)) return BadRequest();
+                if (string.IsNullOrEmpty(tittle) 
+                    || string.IsNullOrEmpty(description) 
+                    ||string.IsNullOrEmpty(genre) 
+                    || string.IsNullOrEmpty(subGenre)
+                    ||string.IsNullOrEmpty(bookPath) 
+                    || string.IsNullOrEmpty(coverPath)) return BadRequest();
 
                 Authors? initAuthor = null;
 
