@@ -70,35 +70,25 @@ namespace LimboReaderAPI.Controllers.File
                         .Select(item => item.FilePath)
                         .FirstOrDefaultAsync();
 
-                if(path == null) return BadRequest("Файл книги не найден");
+                if(path == null) return BadRequest("Путь к книге в базе данных не найден");
 
-                string baseDirectory = Directory.GetCurrentDirectory();
-
-                 fullPath = Path.Combine(baseDirectory, path);
-
-                var tempPath = fullPath;
-                tempPath = Path.ChangeExtension(tempPath, extension);
-
+                var tempPath = Path.ChangeExtension(Path.Combine(Directory.GetCurrentDirectory(), path), extension); // формируем путь к файлу 
 
                 if (System.IO.File.Exists(tempPath))
                 {
-                    byte[] fileBytes = System.IO.File.ReadAllBytes(tempPath);
+                    byte[] fileBytes = System.IO.File.ReadAllBytes(tempPath); 
 
-                    var strArr = path.Split('\\');
+                    var strArr = tempPath.Split('\\');        
+                    
+                    var fileNameBytes = Encoding.UTF8.GetBytes(strArr[strArr.Length - 1]); // передаем имя файла с расширением 
 
-                    fileName = strArr[strArr.Length - 1];
-
-                    strArr = fileName.Split('.');
-
-                    var fileNameBytes = Encoding.UTF8.GetBytes(fileName);
-                    var encodedFileName = Convert.ToBase64String(fileNameBytes);
-
+                    var encodedFileName = Convert.ToBase64String(fileNameBytes);  // нужно для отображения кириллицы в имени файла 
+                    
                     var contentDisposition = new System.Net.Mime.ContentDisposition
                     {
                         FileName = WebUtility.UrlEncode(encodedFileName),
                         Inline = false
                     };
-
                     Response.Headers.Add("Content-Disposition", contentDisposition.ToString());
 
 
