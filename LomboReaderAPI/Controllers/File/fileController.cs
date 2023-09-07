@@ -101,8 +101,17 @@ namespace LimboReaderAPI.Controllers.File
             catch (Exception ex) {
                 return BadRequest(ex.Message);
             }
+                }
+        [HttpGet]
+        [Route("ExistFile")]
+        public ActionResult ExistFile(string path) {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), path + ".pdf");
+            if (System.IO.File.Exists(filePath))
+            {
+                return Ok(true);
+            }
+            return BadRequest("Файл для чтения не найден");   
         }
-        
 
 
     }

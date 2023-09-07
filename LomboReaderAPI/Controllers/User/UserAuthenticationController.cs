@@ -2,8 +2,8 @@
 
 using LimboReaderAPI.Data;
 
-using LomboReaderAPI.Model.User;
-using LomboReaderAPI.Services.Mail;
+using LimboReaderAPI.Model.User;
+using LimboReaderAPI.Services.Mail;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

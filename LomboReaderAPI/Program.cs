@@ -1,11 +1,11 @@
-using DevOpseTest.Services.Hash;
+п»їusing DevOpseTest.Services.Hash;
 using DevOpseTest.Services.KDF;
 
 using LimboReaderAPI.Data;
 
-using LomboReaderAPI.Services.CodeGenerator;
-using LomboReaderAPI.Services.File;
-using LomboReaderAPI.Services.Mail;
+using LimboReaderAPI.Services.CodeGenerator;
+using LimboReaderAPI.Services.File;
+using LimboReaderAPI.Services.Mail;
 
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +18,7 @@ using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Настройка подключения к Базе Данных
+//РќР°СЃС‚СЂРѕР№РєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє Р‘Р°Р·Рµ Р”Р°РЅРЅС‹С…
 String? connectionString = builder.Configuration.GetConnectionString("PlanetScale");
 MySqlConnection connection = new(connectionString);
 

@@ -1,7 +1,7 @@
 ﻿using LimboReaderAPI.Data;
 
-using LomboReaderAPI.Model.User;
-using LomboReaderAPI.Services.CodeGenerator;
+using LimboReaderAPI.Model.User;
+using LimboReaderAPI.Services.CodeGenerator;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

@@ -1,4 +1,4 @@
-﻿namespace LomboReaderAPI.Services.CodeGenerator
+﻿namespace LimboReaderAPI.Services.CodeGenerator
 {
     public interface ICodeGenerator 
     { 

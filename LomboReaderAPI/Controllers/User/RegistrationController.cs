@@ -3,8 +3,8 @@
 using LimboReaderAPI.Data;
 using LimboReaderAPI.Model.User;
 
-using LomboReaderAPI.Services.CodeGenerator;
-using LomboReaderAPI.Services.Mail;
+using LimboReaderAPI.Services.CodeGenerator;
+using LimboReaderAPI.Services.Mail;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

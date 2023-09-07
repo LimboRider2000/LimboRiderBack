@@ -1,4 +1,4 @@
-﻿namespace LomboReaderAPI.Services.File
+﻿namespace LimboReaderAPI.Services.File
 {
     public interface IFileWriter
     {

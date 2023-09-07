@@ -1,6 +1,6 @@
 ﻿using LimboReaderAPI.Data.Entety;
 
-namespace LomboReaderAPI.Model.Book
+namespace LimboReaderAPI.Model.Book
 {
     public class BookTransfer
     {

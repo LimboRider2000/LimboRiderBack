@@ -1,8 +1,8 @@
 ﻿using LimboReaderAPI.Data;
 using LimboReaderAPI.Data.Entety;
 
-using LomboReaderAPI.Model.Book;
-using LomboReaderAPI.Services.File;
+using LimboReaderAPI.Model.Book;
+using LimboReaderAPI.Services.File;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Operations;
@@ -12,17 +12,17 @@ using System.Text;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace LomboReaderAPI.Controllers.BookPost
+namespace LimboReaderAPI.Controllers.BookPost
 {
     [Route("api/Book")]
     [ApiController]
     public class BookController : ControllerBase
     {
-        IFileWriter _filWriter;
+        IFileWriter _fileWriter;
         DataContext _dataContext;
-        public BookController(IFileWriter filWriter, DataContext dataContext)
+        public BookController(IFileWriter fileWriter, DataContext dataContext)
         {
-            _filWriter = filWriter;
+            _fileWriter = fileWriter;
             _dataContext = dataContext;
         }
 
@@ -117,7 +117,7 @@ namespace LomboReaderAPI.Controllers.BookPost
                 var authorName = value["authorName"];
                 //   List<System.IO.File> bookFileList = value["bookFileList"];
 
-                string bookFileName = $"{tittle}-{authorLastName} {authorName}".ToLower();
+              string bookFileName = $"{tittle}-{authorLastName} {authorName}".ToLower();
 
 
                 if (value.Files.Count > 0)
@@ -125,12 +125,12 @@ namespace LomboReaderAPI.Controllers.BookPost
                     
                     foreach (var file in value.Files)
                         {
-                         await _filWriter.BookFileWriter(file, bookFileName);
+                         await _fileWriter.BookFileWriter(file, bookFileName.Trim());
                         }
                 }
                 var bookPath = Path.Combine("Resources", "Book", bookFileName);
-                //var bookPath = await _filWriter.BookFileWriter(value["bookFileList"].ToString(), tittle.ToString(), bookExt.ToString());
-                var coverPath = await _filWriter.CoverFileWriter(value["titleImgFile"].ToString(), tittle.ToString(), coverExt.ToString());
+                //var bookPath = await _fileWriter.BookFileWriter(value["bookFileList"].ToString(), tittle.ToString(), bookExt.ToString());
+                var coverPath = await _fileWriter.CoverFileWriter(value["titleImgFile"].ToString(), tittle.ToString(), coverExt.ToString());
 
                 if (string.IsNullOrEmpty(tittle) 
                     || string.IsNullOrEmpty(description) 
@@ -154,8 +154,8 @@ namespace LomboReaderAPI.Controllers.BookPost
                     initAuthor = new Authors()
                     {
                         Id = Guid.NewGuid(),
-                        LastName = authorLastName.ToString(),
-                        Name = authorName.ToString(),
+                        LastName = authorLastName.ToString().Trim(),
+                        Name = authorName.ToString().Trim(),
                     };
                     await _dataContext.Authors.AddAsync(initAuthor);
                 }
@@ -167,10 +167,10 @@ namespace LomboReaderAPI.Controllers.BookPost
                     SubGenre_id = await _dataContext.SubGenres.Where(item => item.Id == Guid.Parse(subGenre.ToString())).FirstAsync(),
                     User_id = await _dataContext.Users.Where(item => item.Id == Guid.Parse(userId.ToString())).FirstAsync(),
                     
-                    TitleImgPath = coverPath,
-                    Title = tittle.ToString(),
-                    Description = description.ToString(),
-                    FilePath = bookPath,
+                    TitleImgPath = coverPath.Trim(),
+                    Title = tittle.ToString().Trim(),
+                    Description = description.ToString().Trim(),
+                    FilePath = bookPath.Trim(),
                     CreatedDate = DateTime.Now,
                     Author_id = initAuthor,
                     Rating = 0

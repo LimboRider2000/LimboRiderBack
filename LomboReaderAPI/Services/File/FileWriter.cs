@@ -2,7 +2,7 @@
 
 using static System.Net.Mime.MediaTypeNames;
 
-namespace LomboReaderAPI.Services.File
+namespace LimboReaderAPI.Services.File
 {
     public class FileWriter : IFileWriter
     {

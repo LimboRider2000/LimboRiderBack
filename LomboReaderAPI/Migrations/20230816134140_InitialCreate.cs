@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace LomboReaderAPI.Migrations
+namespace LimboReaderAPI.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

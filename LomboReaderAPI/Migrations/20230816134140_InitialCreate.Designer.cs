@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace LomboReaderAPI.Migrations
+namespace LimboReaderAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
     [Migration("20230816134140_InitialCreate")]

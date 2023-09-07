@@ -2,7 +2,7 @@
 using System.Net;
 using System.Data;
 
-namespace LomboReaderAPI.Services.Mail
+namespace LimboReaderAPI.Services.Mail
 {
     public class MailService : IMailService
     {

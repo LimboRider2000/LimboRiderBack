@@ -1,4 +1,4 @@
-﻿namespace LomboReaderAPI.Services.Mail
+﻿namespace LimboReaderAPI.Services.Mail
 {
     public interface IMailService
     {
