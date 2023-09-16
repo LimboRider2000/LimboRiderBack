@@ -25,11 +25,13 @@ namespace LimboReaderAPI.Controllers.Comment
 
         // GET api/<ValuesController>/5
         [HttpGet]
-        public async Task<ActionResult> Get(string book_id)
+        public async Task<ActionResult> Get(string book_id,int slice)
         {
             try
             {
-                var cv = await _dataContext.Comments.Join(_dataContext.Users,
+                var commentCount = _dataContext.Comments.Count();
+
+                var commentCollection = await _dataContext.Comments.Join(_dataContext.Users,
                      c => c.User,
                      u => u.Id,
                      (c, u) => new
@@ -40,8 +42,12 @@ namespace LimboReaderAPI.Controllers.Comment
                          c.DateTime,
                          c.Comment,
                          userObj = u
-                     }).Where(item => item.BookArticle_Id == Guid.Parse(book_id)).ToListAsync();
-                return Ok(cv);  
+                     }).Where(item => item.BookArticle_Id == Guid.Parse(book_id))
+                       .Skip(slice)                                 //пропускаем указвное число записей 
+                       .Take(10)                            //получаем кусок данных
+                       .ToListAsync();
+
+                return Ok(new { commentCollection, commentCount });  
             }catch (Exception ex) {
                 return BadRequest(ex.Message);
             }

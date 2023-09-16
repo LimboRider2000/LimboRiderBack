@@ -4,6 +4,7 @@ using LimboReaderAPI.Data.Entety;
 using LimboReaderAPI.Model.Book;
 using LimboReaderAPI.Services.File;
 
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ namespace LimboReaderAPI.Controllers.BookPost
     {
         IFileWriter _fileWriter;
         DataContext _dataContext;
+        private int _perPage = 5;
         public BookController(IFileWriter fileWriter, DataContext dataContext)
         {
             _fileWriter = fileWriter;
@@ -28,16 +30,24 @@ namespace LimboReaderAPI.Controllers.BookPost
 
         // GET: api/<BookController>
         [HttpGet]
-        public async Task<ActionResult> Get()
-       {
+        public async Task<ActionResult> Get(int page = 1)
+        {
+            if (page < 1) page = 1;
+
+            int _offset = (page - 1) * _perPage;
+            var bookCount = _dataContext.BookArticles.Count();
+
+
             try
             {
-                    var bookList = await _dataContext.BookArticles
-                    .Include(a => a.Author_id)
-                    .Include(u => u.User_id)
-                    .Include(g => g.Genre_id)
-                    .Include(s => s.SubGenre_id)
-                    .ToListAsync();
+                var bookList = await _dataContext.BookArticles
+                .Include(a => a.Author_id)
+                .Include(u => u.User_id)
+                .Include(g => g.Genre_id)
+                .Include(s => s.SubGenre_id)
+                .Skip(_offset)
+                .Take(_perPage)
+                .ToListAsync();
 
                 List<BookTransfer> listTransfer = new List<BookTransfer>();
                 bookList.ForEach(book =>
@@ -60,24 +70,24 @@ namespace LimboReaderAPI.Controllers.BookPost
 
                 });
 
-                return Ok(listTransfer);
-            }catch(Exception ex)
+                return Ok(new { listTransfer, bookCount });
+            } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
             finally { _dataContext.Dispose(); }
-       }
+        }
 
         // GET api/<BookController>/
         [HttpGet("{id}")]
         public async Task<ActionResult> Get(string id)
         {
-            var bookDB = await _dataContext.BookArticles.Where(item=> item.Id == Guid.Parse(id))
+            var bookDB = await _dataContext.BookArticles.Where(item => item.Id == Guid.Parse(id))
                      .Include(a => a.Author_id)
                      .Include(u => u.User_id)
                      .Include(g => g.Genre_id)
                      .Include(s => s.SubGenre_id).FirstOrDefaultAsync();
-            
+
             if (bookDB != null)
             {
                 var booKTransfer = new BookTransfer()
@@ -97,9 +107,85 @@ namespace LimboReaderAPI.Controllers.BookPost
                 return Ok(booKTransfer);
             }
             else return BadRequest("book не найдено");
-            
-        }
 
+        }
+        [HttpGet]
+        [Route("filterBySubGenre")]
+        public async Task<ActionResult> Get(string subGenreId, int page) {
+            if (page < 1) page = 1;
+
+            int _offset = (page - 1) * _perPage;
+            var bookCount = _dataContext.BookArticles
+                .Where(item => item.SubGenre_id.Id == Guid
+                                                   .Parse(subGenreId))
+                .Count();
+
+            try
+            {
+                var bookList = await _dataContext.BookArticles
+                .Include(a => a.Author_id)
+                .Include(u => u.User_id)
+                .Include(g => g.Genre_id)
+                .Include(s => s.SubGenre_id)
+                .Where(item => item.SubGenre_id.Id == Guid.Parse(subGenreId))
+                .Skip(_offset)
+                .Take(_perPage)
+                .ToListAsync();
+
+                List<BookTransfer> listTransfer = new List<BookTransfer>();
+                bookList.ForEach(book =>
+                {
+                    var booKTransfer = new BookTransfer()
+                    {
+                        Id = book.Id,
+                        User_name = book.User_id.Login,
+                        Genre_name = book.Genre_id.GenreName,
+                        SubGenre_name = book.SubGenre_id.SubGenreName,
+                        Author = book.Author_id!,
+                        TitleImgPath = book.TitleImgPath,
+                        Title = book.Title,
+                        Description = book.Description,
+                        FilePath = book.FilePath,
+                        CreatedDate = book.CreatedDate,
+                        Rating = book.Rating,
+                    };
+                    listTransfer.Add(booKTransfer);
+
+                });
+
+                return Ok(new { listTransfer, bookCount });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            finally { _dataContext.Dispose(); }
+
+        }
+        [HttpGet]
+        [Route("bySearchSting")]
+        public async Task<ActionResult> GetBysearch(string search) {
+            if (search.Length == 0) return BadRequest("Server: search data is corrupted");
+            try
+            {
+                var bookCollection = await _dataContext.BookArticles
+                    .Include(i => i.Author_id)
+                     .Include(u => u.User_id)
+                     .Include(g => g.Genre_id)
+                     .Include(s => s.SubGenre_id)
+                                    .Where(item => EF.Functions.Like(item.Title, $"%{search}%") ||
+                                    EF.Functions.Like(item.Author_id!.LastName, $"%{search}%") ||
+                                    EF.Functions.Like(item.Author_id!.Name, $"%{search}%")
+                                    )
+                     .ToListAsync();    
+
+                return Ok(bookCollection);
+            }catch(Exception ex)
+            {
+                return BadRequest("Server: " + ex.Message);
+            }
+        } 
+        
         // POST api/<BookController>
         [HttpPost, DisableRequestSizeLimit]
         public async Task<ActionResult> Post(IFormCollection value)
@@ -201,6 +287,7 @@ namespace LimboReaderAPI.Controllers.BookPost
             }
 
         }
+        
 
         // PUT api/<BookController>/5
         [HttpPut("{id}")]
