@@ -4,7 +4,5 @@
     {
         string GetHash(string text);
 
-
-
     }
 }

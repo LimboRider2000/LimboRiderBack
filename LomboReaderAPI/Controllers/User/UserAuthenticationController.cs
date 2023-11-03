@@ -12,7 +12,7 @@ namespace LimboReaderAPI.Controllers.UserController
 {
     [Route("Api/Authentication")]
     [ApiController]
-    public class UserAuthenticationController : ControllerBase
+       public class UserAuthenticationController : ControllerBase
     {
         public DataContext _dataContext;
         public IKDFService _kdfService;
@@ -50,7 +50,7 @@ namespace LimboReaderAPI.Controllers.UserController
 
                         if (!currUser.Active) return Ok(new { notActive = true } );
 
-                        return Ok(new { success = true, currUser,avatarPath = currUser.Avatar });
+                        return Ok(new { success = true, currUser});
                     }
                     
                 }

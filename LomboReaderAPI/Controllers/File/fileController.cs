@@ -17,8 +17,6 @@ namespace LimboReaderAPI.Controllers.File
     public class AvatarFileController : ControllerBase
     {
         private DataContext _dataContext;
-        private string? fullPath { get; set; }
-        private string? fileName { get; set; }
 
         public AvatarFileController(DataContext dataContext)
         {
@@ -112,7 +110,30 @@ namespace LimboReaderAPI.Controllers.File
             }
             return BadRequest("Файл для чтения не найден");   
         }
+        [HttpGet]
+        [Route("CheckExtensions")]
+        public ActionResult CheckExtensions(string filePath) {
+            try
+            {
+                var fileExtensionMap = new Dictionary<string, bool>() {
+                    { "pdf", false },
+                    {"epub",false },
+                    {"fb2",false }
+                };
+                
+                foreach(var file in fileExtensionMap) {
+                    var fullFilePath = Path.Combine(Directory.GetCurrentDirectory(), filePath +"."+ file.Key);
 
+                    fileExtensionMap[file.Key] = System.IO.File.Exists(fullFilePath);
+                }
+                    return Ok(fileExtensionMap);
 
+            }
+            catch (Exception ex) {
+                return BadRequest(ex.Message);
+            }
+            
+        }
+        
     }
 }

@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
 
+using NuGet.Common;
+
 using System.Text;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -19,9 +21,14 @@ namespace LimboReaderAPI.Controllers.BookPost
     [ApiController]
     public class BookController : ControllerBase
     {
-        IFileWriter _fileWriter;
-        DataContext _dataContext;
+        private readonly IFileWriter _fileWriter;
+        private DataContext _dataContext;
         private int _perPage = 5;
+        private Dictionary<string, bool> fileExtensionMap = new Dictionary<string, bool>() {
+                    { "pdf", false },
+                    {"epub",false },
+                    {"fb2",false }
+                };
         public BookController(IFileWriter fileWriter, DataContext dataContext)
         {
             _fileWriter = fileWriter;
@@ -32,19 +39,22 @@ namespace LimboReaderAPI.Controllers.BookPost
         [HttpGet]
         public async Task<ActionResult> Get(int page = 1)
         {
-            if (page < 1) page = 1;
-
-            int _offset = (page - 1) * _perPage;
-            var bookCount = _dataContext.BookArticles.Count();
-
-
             try
             {
+                if (page < 1) page = 1;
+
+                int _offset = (page - 1) * _perPage;
+                var bookCount = _dataContext.BookArticles.Count();
+
+                
+
+
                 var bookList = await _dataContext.BookArticles
                 .Include(a => a.Author_id)
                 .Include(u => u.User_id)
                 .Include(g => g.Genre_id)
                 .Include(s => s.SubGenre_id)
+                .OrderByDescending(t=> t.CreatedDate)
                 .Skip(_offset)
                 .Take(_perPage)
                 .ToListAsync();
@@ -75,7 +85,6 @@ namespace LimboReaderAPI.Controllers.BookPost
             {
                 return BadRequest(ex.Message);
             }
-            finally { _dataContext.Dispose(); }
         }
 
         // GET api/<BookController>/
@@ -173,19 +182,93 @@ namespace LimboReaderAPI.Controllers.BookPost
                      .Include(u => u.User_id)
                      .Include(g => g.Genre_id)
                      .Include(s => s.SubGenre_id)
-                                    .Where(item => EF.Functions.Like(item.Title, $"%{search}%") ||
+                                    .Where(item =>
+                                    EF.Functions.Like(item.Title, $"%{search}%") ||
                                     EF.Functions.Like(item.Author_id!.LastName, $"%{search}%") ||
-                                    EF.Functions.Like(item.Author_id!.Name, $"%{search}%")
+                                    EF.Functions.Like(item.Author_id!.Name, $"%{search}%") ||
+                                    EF.Functions.Like(item.Author_id!.LastName + " " + item.Author_id!.Name, $"%{search}%") ||
+                                    EF.Functions.Like(item.Author_id!.Name + " " + item.Author_id!.LastName, $"%{search}%") ||
+                                    EF.Functions.Like(item.Author_id!.Name + " " + item.Author_id!.LastName + " " + item.Title, $"%{search}%") ||
+                                    EF.Functions.Like(item.Title + " " + item.Author_id!.Name + " " + item.Author_id!.LastName, $"%{search}%") ||
+                                    EF.Functions.Like(item.User_id.Login, $"%{search}%")
                                     )
-                     .ToListAsync();    
+                     .ToListAsync();
 
-                return Ok(bookCollection);
-            }catch(Exception ex)
+
+                List<BookTransfer> listTransfer = new List<BookTransfer>();
+                bookCollection.ForEach(book =>
+                {
+                    var booKTransfer = new BookTransfer()
+                    {
+                        Id = book.Id,
+                        User_name = book.User_id.Login,
+                        Genre_name = book.Genre_id.GenreName,
+                        SubGenre_name = book.SubGenre_id.SubGenreName,
+                        Author = book.Author_id!,
+                        TitleImgPath = book.TitleImgPath,
+                        Title = book.Title,
+                        Description = book.Description,
+                        FilePath = book.FilePath,
+                        CreatedDate = book.CreatedDate,
+                        Rating = book.Rating,
+                    };
+                    listTransfer.Add(booKTransfer);
+
+                });
+
+                return Ok(listTransfer);
+            } catch (Exception ex)
             {
                 return BadRequest("Server: " + ex.Message);
             }
-        } 
-        
+        }
+
+        [HttpGet]
+        [Route("getBookByUserId")]
+        public async Task<ActionResult> GetBookByUserId(string userId)
+        {
+            try
+            {
+                var bookList = await _dataContext.BookArticles
+                .Include(a => a.Author_id)
+                .Include(u => u.User_id)
+                .Include(g => g.Genre_id)
+                .Include(s => s.SubGenre_id)
+                .Where(item => item.User_id.Id == Guid.Parse(userId))
+                .ToListAsync();
+
+                List<BookTransfer> listTransfer = new List<BookTransfer>();
+                bookList.ForEach(book =>
+                {
+                    var booKTransfer = new BookTransfer()
+                    {
+                        Id = book.Id,
+                        User_name = book.User_id.Login,
+                        Genre_name = book.Genre_id.GenreName,
+                        SubGenre_name = book.SubGenre_id.SubGenreName,
+                        Author = book.Author_id!,
+                        TitleImgPath = book.TitleImgPath,
+                        Title = book.Title,
+                        Description = book.Description,
+                        FilePath = book.FilePath,
+                        CreatedDate = book.CreatedDate,
+                        Rating = book.Rating,
+                    };
+                    listTransfer.Add(booKTransfer);
+
+                });
+
+                return Ok(listTransfer);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            finally { _dataContext.Dispose(); }
+
+        }
+
+
         // POST api/<BookController>
         [HttpPost, DisableRequestSizeLimit]
         public async Task<ActionResult> Post(IFormCollection value)
@@ -201,28 +284,29 @@ namespace LimboReaderAPI.Controllers.BookPost
                 var coverExt = value["extensionTitleImg"];
                 var authorLastName = value["authorLastName"];
                 var authorName = value["authorName"];
-                //   List<System.IO.File> bookFileList = value["bookFileList"];
+                // var bookFileList = value["bookFileList"] as List<System.IO.File>;
 
-              string bookFileName = $"{tittle}-{authorLastName} {authorName}".ToLower();
+                var bookId = Guid.NewGuid();
+                string bookFileName = bookId.ToString();
 
 
                 if (value.Files.Count > 0)
                 {
-                    
+
                     foreach (var file in value.Files)
-                        {
-                         await _fileWriter.BookFileWriter(file, bookFileName.Trim());
-                        }
+                    {
+                        await _fileWriter.BookFileWriter(file, bookFileName);
+                    }
                 }
                 var bookPath = Path.Combine("Resources", "Book", bookFileName);
                 //var bookPath = await _fileWriter.BookFileWriter(value["bookFileList"].ToString(), tittle.ToString(), bookExt.ToString());
-                var coverPath = await _fileWriter.CoverFileWriter(value["titleImgFile"].ToString(), tittle.ToString(), coverExt.ToString());
+                var coverPath = await _fileWriter.CoverFileWriter(value["titleImgFile"].ToString(), bookId.ToString(), coverExt.ToString());
 
-                if (string.IsNullOrEmpty(tittle) 
-                    || string.IsNullOrEmpty(description) 
-                    ||string.IsNullOrEmpty(genre) 
+                if (string.IsNullOrEmpty(tittle)
+                    || string.IsNullOrEmpty(description)
+                    || string.IsNullOrEmpty(genre)
                     || string.IsNullOrEmpty(subGenre)
-                    ||string.IsNullOrEmpty(bookPath) 
+                    || string.IsNullOrEmpty(bookPath)
                     || string.IsNullOrEmpty(coverPath)) return BadRequest();
 
                 Authors? initAuthor = null;
@@ -248,11 +332,11 @@ namespace LimboReaderAPI.Controllers.BookPost
 
                 var book = new BookArticle()
                 {
-                    Id = Guid.NewGuid(),
-                    Genre_id = await _dataContext.Genres.Where(item => item.Id == Guid.Parse(genre.ToString())).FirstAsync() ,
+                    Id = bookId,
+                    Genre_id = await _dataContext.Genres.Where(item => item.Id == Guid.Parse(genre.ToString())).FirstAsync(),
                     SubGenre_id = await _dataContext.SubGenres.Where(item => item.Id == Guid.Parse(subGenre.ToString())).FirstAsync(),
                     User_id = await _dataContext.Users.Where(item => item.Id == Guid.Parse(userId.ToString())).FirstAsync(),
-                    
+
                     TitleImgPath = coverPath.Trim(),
                     Title = tittle.ToString().Trim(),
                     Description = description.ToString().Trim(),
@@ -261,14 +345,14 @@ namespace LimboReaderAPI.Controllers.BookPost
                     Author_id = initAuthor,
                     Rating = 0
                 };
-               await _dataContext.BookArticles.AddAsync(book);
-               await _dataContext.SaveChangesAsync();
+                await _dataContext.BookArticles.AddAsync(book);
+                await _dataContext.SaveChangesAsync();
 
                 BookTransfer bookTransfer = new BookTransfer
                 {
                     Id = book.Id,
                     User_name = book.User_id.Login,
-                    Genre_name =  book.Genre_id.GenreName,
+                    Genre_name = book.Genre_id.GenreName,
                     SubGenre_name = book.SubGenre_id.SubGenreName,
                     Author = book.Author_id,
                     TitleImgPath = book.TitleImgPath,
@@ -287,18 +371,99 @@ namespace LimboReaderAPI.Controllers.BookPost
             }
 
         }
-        
+        [HttpPut, DisableRequestSizeLimit]
+        public async Task<ActionResult> Put(IFormCollection formData) {
+            try
+            {
+                var extensionTitleImg = formData["extensionTitleImg"];
+                var authorId = formData["authorId"];
+                var bookId = formData["idBook"];
+                var titleImgFile = formData["titleImgFile"];
+                var isTitleImgChange = Convert.ToBoolean(formData["isTitleImgChange"]);
+                var authorLastName = formData["authorLastName"];
+                var authorName = formData["authorName"];
+                var title = formData["title"];
+                var description = formData["description"];
+                var genre = formData["genre"];
+                var subGenre = formData["subGenre"];
 
-        // PUT api/<BookController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
+                var currentBook = _dataContext
+                                  .BookArticles
+                                  .Where(
+                                   item =>
+                                   item.Id == Guid.Parse(bookId.ToString()))
+                                   .FirstOrDefault();
+
+                if (currentBook == null)
+                    return BadRequest("Книга не найдена");
+
+                if (isTitleImgChange)
+                {
+                    currentBook.TitleImgPath = await _fileWriter.EditCover(titleImgFile.ToString(), bookId.ToString()
+                          , currentBook.TitleImgPath, extensionTitleImg.ToString());
+                }
+
+
+                foreach (var file in formData.Files)
+                {
+                    var ext = file.FileName.Trim().Substring(file.FileName.LastIndexOf(".") + 1);
+
+                    var fileName = currentBook.FilePath.Substring(currentBook.FilePath.LastIndexOf("\\") + 1);
+
+                    var pathToFile = Path.Combine(Directory.GetCurrentDirectory(), (fileName + "." + ext));
+
+                    if (System.IO.File.Exists(pathToFile))
+                    {
+                        _fileWriter.DeleteBookFile(pathToFile);
+                    }
+
+                    await _fileWriter.BookFileWriter(file, fileName);
+                }
+
+                var currentAuthor = await _dataContext.Authors
+                    .Where(author => author.Id == Guid.Parse(authorId.ToString())).FirstOrDefaultAsync();
+                if (currentAuthor != null)
+                {
+                    currentAuthor.LastName = authorLastName.ToString();
+                    currentAuthor.Name = authorName.ToString();
+                }
+
+                // путь к файлу обложки 
+                currentBook.Title = title.ToString();
+                currentBook.Description = description.ToString();
+
+                currentBook.Genre_id = await _dataContext.Genres.Where(item => item.Id == Guid.Parse(genre.ToString())).FirstAsync();
+                currentBook.SubGenre_id = await _dataContext.SubGenres.Where(item => item.Id == Guid.Parse(subGenre.ToString())).FirstAsync();
+
+
+                 _dataContext.SaveChanges();
+
+                return Ok();
+            }
+            catch(Exception ex) {
+                return BadRequest(ex.Message);            
+            }
         }
 
+
+
+
+
+
+
+
         // DELETE api/<BookController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpDelete]
+        public ActionResult Delete(string id)
         {
+            try {
+                _dataContext.BookArticles.Where(b => b.Id == Guid.Parse(id)).ExecuteDelete();
+                return Ok();
+            }
+            catch (Exception ex) {
+                return BadRequest();
+            }
+
         }
     }
 }
