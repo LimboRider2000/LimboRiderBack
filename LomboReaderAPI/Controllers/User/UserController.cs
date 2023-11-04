@@ -177,7 +177,7 @@ namespace LimboReaderAPI.Controllers.User
         }
 
         // DELETE api/<UserController>/5
-        [HttpDelete("{id}") 
+        [HttpDelete("{id}") ]
         public void Delete(int id)
         {
         }
