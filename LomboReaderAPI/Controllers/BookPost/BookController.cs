@@ -2,6 +2,7 @@
 using LimboReaderAPI.Data.Entety;
 
 using LimboReaderAPI.Model.Book;
+using LimboReaderAPI.Repositories;
 using LimboReaderAPI.Services.File;
 
 using Microsoft.AspNetCore.Identity;
@@ -23,16 +24,18 @@ namespace LimboReaderAPI.Controllers.BookPost
     {
         private readonly IFileWriter _fileWriter;
         private DataContext _dataContext;
+        private readonly IBookRepositories bookRepositories;
         private int _perPage = 5;
         private Dictionary<string, bool> fileExtensionMap = new Dictionary<string, bool>() {
                     { "pdf", false },
                     {"epub",false },
                     {"fb2",false }
-                };
-        public BookController(IFileWriter fileWriter, DataContext dataContext)
+         };
+        public BookController(IFileWriter fileWriter, DataContext dataContext, IBookRepositories bookRepositories)
         {
             _fileWriter = fileWriter;
             _dataContext = dataContext;
+            this.bookRepositories = bookRepositories;
         }
 
         // GET: api/<BookController>
@@ -44,20 +47,12 @@ namespace LimboReaderAPI.Controllers.BookPost
                 if (page < 1) page = 1;
 
                 int _offset = (page - 1) * _perPage;
-                var bookCount = _dataContext.BookArticles.Count();
-
-                
+                var bookCount = await bookRepositories.GetCount();
 
 
-                var bookList = await _dataContext.BookArticles
-                .Include(a => a.Author_id)
-                .Include(u => u.User_id)
-                .Include(g => g.Genre_id)
-                .Include(s => s.SubGenre_id)
-                .OrderByDescending(t=> t.CreatedDate)
-                .Skip(_offset)
-                .Take(_perPage)
-                .ToListAsync();
+
+                List<BookArticle> bookList = await bookRepositories.Get(_offset,_perPage);
+                    
 
                 List<BookTransfer> listTransfer = new List<BookTransfer>();
                 bookList.ForEach(book =>
@@ -91,11 +86,7 @@ namespace LimboReaderAPI.Controllers.BookPost
         [HttpGet("{id}")]
         public async Task<ActionResult> Get(string id)
         {
-            var bookDB = await _dataContext.BookArticles.Where(item => item.Id == Guid.Parse(id))
-                     .Include(a => a.Author_id)
-                     .Include(u => u.User_id)
-                     .Include(g => g.Genre_id)
-                     .Include(s => s.SubGenre_id).FirstOrDefaultAsync();
+            var bookDB = await bookRepositories.Get(id);
 
             if (bookDB != null)
             {
@@ -124,22 +115,11 @@ namespace LimboReaderAPI.Controllers.BookPost
             if (page < 1) page = 1;
 
             int _offset = (page - 1) * _perPage;
-            var bookCount = _dataContext.BookArticles
-                .Where(item => item.SubGenre_id.Id == Guid
-                                                   .Parse(subGenreId))
-                .Count();
-
             try
             {
-                var bookList = await _dataContext.BookArticles
-                .Include(a => a.Author_id)
-                .Include(u => u.User_id)
-                .Include(g => g.Genre_id)
-                .Include(s => s.SubGenre_id)
-                .Where(item => item.SubGenre_id.Id == Guid.Parse(subGenreId))
-                .Skip(_offset)
-                .Take(_perPage)
-                .ToListAsync();
+                var bookCount =await bookRepositories.GetCountBuSubGenre(subGenreId);
+
+                var bookList = await bookRepositories.GetSG(subGenreId,_offset,_perPage);
 
                 List<BookTransfer> listTransfer = new List<BookTransfer>();
                 bookList.ForEach(book =>
@@ -173,7 +153,7 @@ namespace LimboReaderAPI.Controllers.BookPost
         }
         [HttpGet]
         [Route("bySearchSting")]
-        public async Task<ActionResult> GetBysearch(string search) {
+        public async Task<ActionResult> GetBySearch(string search) {
             if (search.Length == 0) return BadRequest("Server: search data is corrupted");
             try
             {
@@ -229,13 +209,7 @@ namespace LimboReaderAPI.Controllers.BookPost
         {
             try
             {
-                var bookList = await _dataContext.BookArticles
-                .Include(a => a.Author_id)
-                .Include(u => u.User_id)
-                .Include(g => g.Genre_id)
-                .Include(s => s.SubGenre_id)
-                .Where(item => item.User_id.Id == Guid.Parse(userId))
-                .ToListAsync();
+                var bookList =  await bookRepositories.GetByUserId(userId);
 
                 List<BookTransfer> listTransfer = new List<BookTransfer>();
                 bookList.ForEach(book =>
@@ -345,7 +319,7 @@ namespace LimboReaderAPI.Controllers.BookPost
                     Author_id = initAuthor,
                     Rating = 0
                 };
-                await _dataContext.BookArticles.AddAsync(book);
+                await bookRepositories.Post(book);
                 await _dataContext.SaveChangesAsync();
 
                 BookTransfer bookTransfer = new BookTransfer
@@ -444,14 +418,6 @@ namespace LimboReaderAPI.Controllers.BookPost
                 return BadRequest(ex.Message);            
             }
         }
-
-
-
-
-
-
-
-
         // DELETE api/<BookController>/5
         [HttpDelete]
         public ActionResult Delete(string id)

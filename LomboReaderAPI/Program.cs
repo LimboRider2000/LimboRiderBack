@@ -2,7 +2,7 @@
 using DevOpseTest.Services.KDF;
 
 using LimboReaderAPI.Data;
-
+using LimboReaderAPI.Repositories;
 using LimboReaderAPI.Services.CodeGenerator;
 using LimboReaderAPI.Services.File;
 using LimboReaderAPI.Services.Mail;
@@ -27,7 +27,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     connection,
     ServerVersion.AutoDetect(connection),
     serverOptions => serverOptions
-    .MigrationsHistoryTable(
+    .MigrationsHistoryTable( 
         tableName: HistoryRepository.DefaultTableName,
         schema: "LimboReaderDB"
         ).SchemaBehavior(
@@ -41,6 +41,9 @@ builder.Services.AddSingleton<IKDFService, HashBasedKdfService>();
 builder.Services.AddSingleton<IMailService, MailService>();
 builder.Services.AddTransient<ICodeGenerator,CodeGenerator>();
 builder.Services.AddSingleton<IFileWriter, FileWriter>();
+
+builder.Services.AddTransient<IBookRepositories, BookRepositories>();
+
 
 builder.Services.AddCors();
 builder.Services.AddSwaggerGen();

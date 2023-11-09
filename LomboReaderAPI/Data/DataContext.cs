@@ -13,62 +13,13 @@ namespace LimboReaderAPI.Data
         public DbSet<SubGenre> SubGenres { get; set; }
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
-            #region
-            //if (!Database.EnsureCreated())
-            //{
-            //    Genre g1 = new() { GenreName = "Фантастика" };
-            //    Genre g2 = new() { GenreName = "Фэнтези" };
-            //    Genre g3 = new() { GenreName = "Детективы" };
-            //    Genre g4 = new() { GenreName = "Проза" };
-            //    Genre g5 = new() { GenreName = "Любовные романы" };
-            //    Genre g6 = new() { GenreName = "Приключения" };
-            //    Genre g7 = new() { GenreName = "Детское" };
-            //    Genre g8 = new() { GenreName = "Дом и семья" };
-            //    Genre g9 = new() { GenreName = "Поэзия, Драматургия" };
-            //    Genre g10 = new() { GenreName = "Старинная литература" };
-            //    Genre g11 = new() { GenreName = "Наука, Образование" };
-            //    Genre g12 = new() { GenreName = "Компьютеры и Интернет" };
-            //    Genre g13 = new() { GenreName = "Справочная литература" };
-            //    Genre g14 = new() { GenreName = "Документальное" };
-            //    Genre g15 = new() { GenreName = "Религия и духовность" };
-            //    Genre g16 = new() { GenreName = "Юмор" };
-
-            //    Genres.Add(g1);
-            //    Genres.Add(g2);
-            //    Genres.Add(g3);
-            //    Genres.Add(g4);
-            //    Genres.Add(g5);
-            //    Genres.Add(g6);
-            //    Genres.Add(g7);
-            //    Genres.Add(g8);
-            //    Genres.Add(g9);
-            //    Genres.Add(g10);
-            //    Genres.Add(g11);
-            //    Genres.Add(g12);
-            //    Genres.Add(g13);
-            //    Genres.Add(g14);
-            //    Genres.Add(g15);
-            //    Genres.Add(g16);
-
-            //    Role role = new() { RoleName = "Admin" };
-            //    Role role1 = new() { RoleName = "Customer" };
-
-            //    Roles.Add(role);
-            //    Roles.Add(role1);
-
-            //    SaveChanges();
-            //};
-            #endregion
         }
-
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
           modelBuilder.HasDefaultSchema("LimboReaderDB");
-
-          
-
-            modelBuilder.Entity<User>().HasData(
+                  
+           modelBuilder.Entity<User>().HasData(
                     new User()
                     {
                         Id = Guid.Parse("6764db38-5306-4e85-a15d-7392e8422b8a"),
